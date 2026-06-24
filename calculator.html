@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculator — Level 1 Task 3</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #12131a;
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; font-family: 'Nunito', sans-serif;
+    background-image: radial-gradient(ellipse at 30% 20%, rgba(139,92,246,0.15) 0%, transparent 50%),
+                      radial-gradient(ellipse at 70% 80%, rgba(236,72,153,0.1) 0%, transparent 50%);
+  }
+
+  .calc-wrapper { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
+  .calc-label { font-size: 0.7rem; letter-spacing: 0.3em; text-transform: uppercase; color: rgba(255,255,255,0.2); }
+
+  .calculator {
+    width: 340px;
+    background: #1a1b26;
+    border-radius: 24px;
+    padding: 1.5rem;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.06),
+                0 40px 80px rgba(0,0,0,0.6),
+                0 0 80px rgba(139,92,246,0.1);
+    position: relative;
+    overflow: hidden;
+  }
+  .calculator::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  }
+
+  /* DISPLAY */
+  .display {
+    background: #0f1117;
+    border-radius: 14px;
+    padding: 1.5rem 1.5rem 1rem;
+    margin-bottom: 1.25rem;
+    border: 1px solid rgba(255,255,255,0.05);
+    min-height: 120px;
+    display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-end;
+    position: relative; overflow: hidden;
+  }
+  .display::before {
+    content: ''; position: absolute; top: 0; right: 0;
+    width: 80px; height: 80px;
+    background: radial-gradient(circle, rgba(139,92,246,0.08), transparent 70%);
+  }
+  .expression {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem; color: rgba(255,255,255,0.3);
+    min-height: 1.2em; word-break: break-all; text-align: right;
+    transition: all 0.15s;
+  }
+  .result {
+    font-family: 'Space Mono', monospace;
+    font-size: 2.6rem; font-weight: 700;
+    color: #fff; letter-spacing: -1px;
+    text-align: right; word-break: break-all;
+    transition: all 0.2s;
+    line-height: 1.1;
+    margin-top: 0.25rem;
+  }
+  .result.animate { transform: scale(1.04); color: #a78bfa; }
+
+  /* BUTTONS */
+  .btn-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.65rem;
+  }
+  button {
+    border: none; cursor: pointer;
+    border-radius: 12px;
+    height: 68px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 1.05rem; font-weight: 700;
+    transition: transform 0.1s, opacity 0.15s, box-shadow 0.15s;
+    position: relative; overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button:active { transform: scale(0.93); }
+  button::after {
+    content: ''; position: absolute; inset: 0;
+    background: rgba(255,255,255,0.08); opacity: 0;
+    transition: opacity 0.15s;
+  }
+  button:hover::after { opacity: 1; }
+
+  /* Number buttons */
+  .btn-num {
+    background: #252636;
+    color: #e8e8f0;
+    box-shadow: 0 2px 0 #1a1b28;
+  }
+
+  /* Function buttons (AC, +/-, %) */
+  .btn-fn {
+    background: #2e2f45;
+    color: #a78bfa;
+    box-shadow: 0 2px 0 #1e1f32;
+  }
+
+  /* Operator buttons */
+  .btn-op {
+    background: linear-gradient(145deg, #7c3aed, #6d28d9);
+    color: #fff;
+    box-shadow: 0 3px 0 #4c1d95, 0 0 20px rgba(124,58,237,0.3);
+  }
+  .btn-op:hover { box-shadow: 0 3px 0 #4c1d95, 0 0 30px rgba(124,58,237,0.5); }
+
+  /* Equals */
+  .btn-eq {
+    background: linear-gradient(145deg, #ec4899, #db2777);
+    color: #fff;
+    box-shadow: 0 3px 0 #9d174d, 0 0 20px rgba(236,72,153,0.3);
+  }
+  .btn-eq:hover { box-shadow: 0 3px 0 #9d174d, 0 0 30px rgba(236,72,153,0.5); }
+
+  .btn-zero { grid-column: span 2; border-radius: 12px; }
+
+  /* History */
+  .history-wrap {
+    width: 340px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px; padding: 1rem 1.25rem;
+  }
+  .history-title {
+    font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase;
+    color: rgba(255,255,255,0.2); margin-bottom: 0.75rem;
+  }
+  .history-list { display: flex; flex-direction: column; gap: 0.4rem; }
+  .history-item {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.78rem; color: rgba(255,255,255,0.35);
+    display: flex; justify-content: space-between;
+  }
+  .history-item span:last-child { color: rgba(167,139,250,0.7); }
+  .no-history { font-size: 0.78rem; color: rgba(255,255,255,0.15); text-align: center; padding: 0.5rem 0; }
+</style>
+</head>
+<body>
+
+<div class="calc-wrapper">
+  <span class="calc-label">Calculator · Level 1 Task 3</span>
+  <div class="calculator">
+    <div class="display">
+      <div class="expression" id="expression"></div>
+      <div class="result" id="result">0</div>
+    </div>
+    <div class="btn-grid">
+      <!-- Row 1 -->
+      <button class="btn-fn" onclick="clearAll()">AC</button>
+      <button class="btn-fn" onclick="toggleSign()">+/−</button>
+      <button class="btn-fn" onclick="percent()">%</button>
+      <button class="btn-op" onclick="setOp('÷')">÷</button>
+      <!-- Row 2 -->
+      <button class="btn-num" onclick="appendNum('7')">7</button>
+      <button class="btn-num" onclick="appendNum('8')">8</button>
+      <button class="btn-num" onclick="appendNum('9')">9</button>
+      <button class="btn-op" onclick="setOp('×')">×</button>
+      <!-- Row 3 -->
+      <button class="btn-num" onclick="appendNum('4')">4</button>
+      <button class="btn-num" onclick="appendNum('5')">5</button>
+      <button class="btn-num" onclick="appendNum('6')">6</button>
+      <button class="btn-op" onclick="setOp('−')">−</button>
+      <!-- Row 4 -->
+      <button class="btn-num" onclick="appendNum('1')">1</button>
+      <button class="btn-num" onclick="appendNum('2')">2</button>
+      <button class="btn-num" onclick="appendNum('3')">3</button>
+      <button class="btn-op" onclick="setOp('+')">+</button>
+      <!-- Row 5 -->
+      <button class="btn-num btn-zero" onclick="appendNum('0')">0</button>
+      <button class="btn-num" onclick="appendDecimal()">.</button>
+      <button class="btn-eq" onclick="calculate()">=</button>
+    </div>
+  </div>
+
+  <div class="history-wrap">
+    <div class="history-title">Recent Calculations</div>
+    <div class="history-list" id="historyList">
+      <div class="no-history">No calculations yet</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let current = '0';
+  let previous = '';
+  let operator = null;
+  let shouldReset = false;
+  let history = [];
+
+  const resultEl = document.getElementById('result');
+  const expressionEl = document.getElementById('expression');
+  const historyList = document.getElementById('historyList');
+
+  function updateDisplay(value) {
+    resultEl.textContent = value;
+    resultEl.classList.add('animate');
+    setTimeout(() => resultEl.classList.remove('animate'), 200);
+  }
+
+  function appendNum(num) {
+    if (shouldReset) { current = ''; shouldReset = false; }
+    if (current === '0' && num !== '.') current = num;
+    else current += num;
+    updateDisplay(format(current));
+  }
+
+  function appendDecimal() {
+    if (shouldReset) { current = '0'; shouldReset = false; }
+    if (!current.includes('.')) current += '.';
+    updateDisplay(format(current));
+  }
+
+  function setOp(op) {
+    if (operator && !shouldReset) calculate(true);
+    previous = current;
+    operator = op;
+    shouldReset = true;
+    expressionEl.textContent = `${format(previous)} ${op}`;
+  }
+
+  function calculate(chained = false) {
+    if (!operator || !previous) return;
+    const a = parseFloat(previous);
+    const b = parseFloat(current);
+    let res;
+    if (operator === '+') res = a + b;
+    else if (operator === '−') res = a - b;
+    else if (operator === '×') res = a * b;
+    else if (operator === '÷') res = b === 0 ? 'Error' : a / b;
+
+    const expr = `${format(previous)} ${operator} ${format(current)} =`;
+    expressionEl.textContent = expr;
+
+    if (!chained) {
+      addHistory(`${format(previous)} ${operator} ${format(current)}`, format(String(res)));
+      operator = null;
+      previous = '';
+    }
+
+    current = String(res);
+    updateDisplay(format(current));
+    shouldReset = true;
+  }
+
+  function clearAll() {
+    current = '0'; previous = ''; operator = null; shouldReset = false;
+    updateDisplay('0');
+    expressionEl.textContent = '';
+  }
+
+  function toggleSign() {
+    if (current === '0' || current === 'Error') return;
+    current = String(parseFloat(current) * -1);
+    updateDisplay(format(current));
+  }
+
+  function percent() {
+    current = String(parseFloat(current) / 100);
+    updateDisplay(format(current));
+  }
+
+  function format(val) {
+    if (val === 'Error' || val === 'Infinity') return 'Error';
+    const num = parseFloat(val);
+    if (isNaN(num)) return val;
+    if (Number.isInteger(num) && !val.endsWith('.')) {
+      return num.toLocaleString('en-US');
+    }
+    return val;
+  }
+
+  function addHistory(expr, result) {
+    history.unshift({ expr, result });
+    if (history.length > 4) history.pop();
+    renderHistory();
+  }
+
+  function renderHistory() {
+    if (history.length === 0) {
+      historyList.innerHTML = '<div class="no-history">No calculations yet</div>';
+      return;
+    }
+    historyList.innerHTML = history.map(h =>
+      `<div class="history-item"><span>${h.expr}</span><span>${h.result}</span></div>`
+    ).join('');
+  }
+
+  // Keyboard support
+  document.addEventListener('keydown', e => {
+    if (e.key >= '0' && e.key <= '9') appendNum(e.key);
+    else if (e.key === '.') appendDecimal();
+    else if (e.key === '+') setOp('+');
+    else if (e.key === '-') setOp('−');
+    else if (e.key === '*') setOp('×');
+    else if (e.key === '/') { e.preventDefault(); setOp('÷'); }
+    else if (e.key === 'Enter' || e.key === '=') calculate();
+    else if (e.key === 'Escape') clearAll();
+    else if (e.key === '%') percent();
+    else if (e.key === 'Backspace') {
+      if (current.length > 1) current = current.slice(0, -1);
+      else current = '0';
+      updateDisplay(format(current));
+    }
+  });
+</script>
+</body>
+</html>
